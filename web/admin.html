@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="styles/admin.css" />
+</head>
+<body>
+    <h1>Админ панель</h1>
+    <div id="admin_panel">
+        <input type="password" id="admin-key" placeholder="Пароль администратора">
+        <input type="text" id="username" placeholder="Имя пользователя">
+        <input type="password" id="password" placeholder="Пароль пользователя">
+        <div class="buttons">
+            <button onclick="addUser()">Добавить пользователя</button>
+            <button onclick="openChat()">Назад в чат</button>
+        </div>
+    </div>
+    <p id="result"></p>
+    <p id="error"></p>
+
+    <script>
+        async function addUser() {
+        const adminKey = document.getElementById("admin-key").value.trim();
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+        const result = document.getElementById("result");
+        const error = document.getElementById("error");
+
+        result.textContent = "";
+        error.textContent = "";
+
+        if (!adminKey || !username || !password) {
+            error.textContent = "Заполните все поля";
+            return;
+        }
+
+        try {
+            const res = await fetch("http://localhost:5000/admin/add_user", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ adminKey, username, password })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+            result.textContent = "Пользователь добавлен!";
+            } else {
+            error.textContent = data.message || "Ошибка добавления";
+            }
+        } catch (e) {
+            error.textContent = "Ошибка сети";
+        }
+        }
+
+        function openChat() {
+            window.location.href = "main.html";
+        }
+    </script>
+</body>
+</html>

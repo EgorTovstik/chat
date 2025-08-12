@@ -5,7 +5,7 @@
   <title>BL Чат</title>
   <script src="/eel.js"></script>
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-  <link rel="stylesheet" href="main.css" />
+  <link rel="stylesheet" href="styles/main.css" />
 </head>
 <body>
 
@@ -14,17 +14,7 @@
   <input type="text" id="login-username" placeholder="Имя пользователя" />
   <input type="password" id="login-password" placeholder="Пароль" />
   <button onclick="login()">Войти</button>
-  <p>Нет аккаунта? <a href="#" onclick="showRegister()">Зарегистрироваться</a></p>
   <p id="auth-message" style="color:red;"></p>
-</div>
-
-<div id="register-container" style="display:none;">
-  <h2>Регистрация</h2>
-  <input type="text" id="reg-username" placeholder="Имя пользователя" />
-  <input type="password" id="reg-password" placeholder="Пароль" />
-  <button onclick="register()">Зарегистрироваться</button>
-  <p>Есть аккаунт? <a href="#" onclick="showLogin()">Войти</a></p>
-  <p id="reg-message" style="color:red;"></p>
 </div>
 
 <div id="app" style="display:none;">
@@ -34,6 +24,7 @@
       <button onclick="createChat()" id="new-chat-button">Создать новый чат</button>
       <div id="chat-items"></div>
     </div>
+    <button onclick="openAdmin()">Админка</button>
   </div>
 
   <div id="chat-area" class="hidden">
@@ -46,6 +37,7 @@
       </form>
     </div>
   </div>
+
 </div>
 
 <script>
@@ -54,43 +46,13 @@
   let currentChat = null;
   let socket = null;
 
-  function showRegister() {
-    document.getElementById("auth-container").style.display = "none";
-    document.getElementById("register-container").style.display = "block";
-  }
-
   function showLogin() {
     document.getElementById("auth-container").style.display = "block";
     document.getElementById("register-container").style.display = "none";
   }
 
-  async function register() {
-    const u = document.getElementById("reg-username").value.trim();
-    const p = document.getElementById("reg-password").value.trim();
-    const msg = document.getElementById("reg-message");
-    msg.textContent = "";
-
-    if (!u || !p) {
-      msg.textContent = "Введите имя пользователя и пароль";
-      return;
-    }
-
-    try {
-      const res = await fetch("http://localhost:5000/register", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({username: u, password: p}),
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert("Регистрация успешна!");
-        showLogin();
-      } else {
-        msg.textContent = data.message || "Ошибка регистрации";
-      }
-    } catch(e) {
-      msg.textContent = "Ошибка сети";
-    }
+  function openAdmin() {
+    window.location.href = "admin.html";
   }
 
   async function login() {
