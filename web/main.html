@@ -37,6 +37,7 @@
   </div>
 
   <div id="chat-area" class="hidden">
+    <div id="chat-name"></div>
     <div id="chat-box"></div>
     <div id="input-container">
       <input type="text" id="input" placeholder="Введите сообщение" />
@@ -198,6 +199,9 @@ socket.on('chat created', (data) => {
       socket.emit("leave", { room: currentChat });
     }
     currentChat = chatName;
+
+    document.getElementById("chat-name").textContent = chatName;
+
     document.getElementById("chat-area").classList.remove("hidden");
     updateChatList();
     socket.emit("join", { room: currentChat });
@@ -228,9 +232,10 @@ socket.on('chat created', (data) => {
     input.value = "";
   }
 
+  // Отправка по нажатию Enter
   document.getElementById("input").addEventListener("keydown", function(event) {
     if (event.key === "Enter") {
-      event.preventDefault();
+      event.preventDefault(); //Отключаем перенос строки
       sendMessage();
     }
   });
@@ -255,8 +260,7 @@ function addMessage(author, text, type, time = "") {
     const box = document.getElementById("chat-box");
     const msg = document.createElement("div");
     msg.classList.add("message", (author === username) ? "user" : "bot");
-    const displayName = (author === username) ? "Вы" : author;
-    msg.innerHTML = `<b>${displayName}:</b> ${text} <span class="time">${time}</span>`;
+    msg.innerHTML = `${text} <span class="time">${time}</span>`;
     box.appendChild(msg);
     box.scrollTop = box.scrollHeight;
 }
