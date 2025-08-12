@@ -1,0 +1,144 @@
+body {
+    font-family: sans-serif;
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 0;
+}
+
+#app {
+    display: flex;
+    height: 100vh;
+}
+
+#chat-list {
+    width: 250px;
+    background-color: #fff;
+    border-right: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+}
+
+#chat-list-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 10px;
+}
+
+#chat-list h2 {
+    margin: 0;
+    font-size: 16px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+}
+
+#new-chat-button {
+    margin: 10px auto;
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 5px;
+    border: 1px solid #999;
+    background-color: #f0f0f0;
+    display: block;
+}
+
+#new-chat-button:hover {
+    background-color: #ddd;
+}
+
+#chat-items {
+    flex: 1;
+    overflow-y: auto;
+    margin-top: 5px;
+}
+
+.chat-item {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+}
+
+.chat-item:hover {
+    background-color: #f0f0f0;
+}
+
+#chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+}
+
+#chat-area.hidden {
+    display: none;
+}
+
+#chat-box {
+    flex: 1;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #fff;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.message {
+    position: relative;
+    max-width: 70%;
+    padding: 8px 12px;
+    border-radius: 10px;
+    display: inline-block;
+    word-wrap: break-word;
+    padding-right: 50px;
+}
+
+.time {
+    position: absolute;
+    right: 10px;
+    bottom: 5px;
+    font-size: 10px;
+    color: #888;
+}
+
+.user {
+    align-self: flex-end;
+    background-color: #d1f1d1;
+    text-align: right;
+}
+
+.bot {
+    align-self: flex-start;
+    background-color: #e1e1e1;
+    text-align: left;
+}
+
+#input-container {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+#input {
+    flex: 1;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #f0f0f0;
+}
+
+button:hover {
+    background-color: #ddd;
+}

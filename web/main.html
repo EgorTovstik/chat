@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>BL Чат</title>
+  <script src="/eel.js"></script>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <link rel="stylesheet" href="main.css" />
+</head>
+<body>
+
+<div id="auth-container">
+  <h2>Вход</h2>
+  <input type="text" id="login-username" placeholder="Имя пользователя" />
+  <input type="password" id="login-password" placeholder="Пароль" />
+  <button onclick="login()">Войти</button>
+  <p>Нет аккаунта? <a href="#" onclick="showRegister()">Зарегистрироваться</a></p>
+  <p id="auth-message" style="color:red;"></p>
+</div>
+
+<div id="register-container" style="display:none;">
+  <h2>Регистрация</h2>
+  <input type="text" id="reg-username" placeholder="Имя пользователя" />
+  <input type="password" id="reg-password" placeholder="Пароль" />
+  <button onclick="register()">Зарегистрироваться</button>
+  <p>Есть аккаунт? <a href="#" onclick="showLogin()">Войти</a></p>
+  <p id="reg-message" style="color:red;"></p>
+</div>
+
+<div id="app" style="display:none;">
+  <div id="chat-list">
+    <div id="chat-list-container">
+      <h2>Мои чаты</h2>
+      <button onclick="createChat()" id="new-chat-button">Создать новый чат</button>
+      <div id="chat-items"></div>
+    </div>
+  </div>
+
+  <div id="chat-area" class="hidden">
+    <div id="chat-box"></div>
+    <div id="input-container">
+      <input type="text" id="input" placeholder="Введите сообщение" />
+      <button onclick="sendMessage()">Отправить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let username = null;
+  let chats = {};
+  let currentChat = null;
+  let socket = null;
+
+  function showRegister() {
+    document.getElementById("auth-container").style.display = "none";
+    document.getElementById("register-container").style.display = "block";
+  }
+
+  function showLogin() {
+    document.getElementById("auth-container").style.display = "block";
+    document.getElementById("register-container").style.display = "none";
+  }
+
+  async function register() {
+    const u = document.getElementById("reg-username").value.trim();
+    const p = document.getElementById("reg-password").value.trim();
+    const msg = document.getElementById("reg-message");
+    msg.textContent = "";
+
+    if (!u || !p) {
+      msg.textContent = "Введите имя пользователя и пароль";
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:5000/register", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({username: u, password: p}),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Регистрация успешна!");
+        showLogin();
+      } else {
+        msg.textContent = data.message || "Ошибка регистрации";
+      }
+    } catch(e) {
+      msg.textContent = "Ошибка сети";
+    }
+  }
+
+  async function login() {
+    const u = document.getElementById("login-username").value.trim();
+    const p = document.getElementById("login-password").value.trim();
+    const msg = document.getElementById("auth-message");
+    msg.textContent = "";
+
+    if (!u || !p) {
+      msg.textContent = "Введите имя пользователя и пароль";
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:5000/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({username: u, password: p}),
+      });
+      const data = await res.json();
+      if (data.success) {
+        username = u;
+        initSocket();
+        document.getElementById("auth-container").style.display = "none";
+        document.getElementById("app").style.display = "flex";
+
+        await loadMyChats();
+      } else {
+        msg.textContent = data.message || "Ошибка входа";
+      }
+    } catch(e) {
+      msg.textContent = "Ошибка сети";
+    }
+  }
+
+  function initSocket() {
+    socket = io("http://localhost:5000");
+    socket.on("connect", () => {
+      console.log("Подключено как", username);
+    });
+
+    socket.on("chat history", (messages) => {
+      chats[currentChat] = messages;
+      renderChat();
+    });
+
+    socket.on("receive message", (message) => {
+      if (!chats[currentChat]) chats[currentChat] = [];
+      chats[currentChat].push(message);
+      if (message.author !== username) {
+        addMessage(message.author, message.text, "bot", message.time);
+      }
+    });
+  }
+
+  function createChat() {
+    const otherUser = prompt("Введите имя пользователя:");
+    if (!otherUser) return alert("Имя пользователя не может быть пустым");
+
+    const participants = [username, otherUser].sort();
+    const chatName = otherUser;
+
+    if (!chats[chatName]) chats[chatName] = [];
+    socket.emit('create chat', { room: chatName, participants });
+
+    selectChat(chatName);
+}
+
+socket.on('chat created', (data) => {
+    if (!chats[data.room]) {
+        chats[data.room] = [];
+        updateChatList();
+    }
+});
+
+  function updateChatList() {
+    const chatItemsContainer = document.getElementById("chat-items");
+    chatItemsContainer.innerHTML = "";
+
+    let chatsArray = Object.entries(chats);
+    chatsArray.sort((a, b) => {
+      let aMessages = a[1];
+      let bMessages = b[1];
+      let aTime = aMessages.length ? aMessages[aMessages.length - 1].time : "00:00";
+      let bTime = bMessages.length ? bMessages[bMessages.length - 1].time : "00:00";
+      return bTime.localeCompare(aTime);
+    });
+
+    chatsArray.forEach(([chatName, messages]) => {
+      let lastMsg = messages.length ? messages[messages.length - 1].text : "";
+      let lastMsgShort = lastMsg.length > 30 ? lastMsg.slice(0, 27) + "..." : lastMsg;
+
+      let div = document.createElement("div");
+      div.classList.add("chat-item");
+      div.textContent = `${chatName}: ${lastMsgShort}`;
+      div.onclick = () => selectChat(chatName);
+
+      if (chatName === currentChat) {
+        div.style.backgroundColor = "#d1f1d1";
+      }
+
+      chatItemsContainer.appendChild(div);
+    });
+  }
+
+  function selectChat(chatName) {
+    if (currentChat) {
+      socket.emit("leave", { room: currentChat });
+    }
+    currentChat = chatName;
+    document.getElementById("chat-area").classList.remove("hidden");
+    updateChatList();
+    socket.emit("join", { room: currentChat });
+  }
+
+  function renderChat() {
+    const box = document.getElementById("chat-box");
+    box.innerHTML = "";
+    if (!currentChat || !chats[currentChat]) return;
+    chats[currentChat].forEach(msg => {
+      addMessage(msg.author, msg.text, msg.author === username ? "user" : "bot", msg.time, false);
+    });
+  }
+
+  function sendMessage() {
+    const input = document.getElementById("input");
+    const message = input.value.trim();
+    if (!message || !currentChat) return;
+
+    const time = getCurrentTime();
+
+    if (!chats[currentChat]) chats[currentChat] = [];
+    chats[currentChat].push({ author: username, text: message, time });
+    addMessage(username, message, "user", time);
+
+    socket.emit("send message", { room: currentChat, author: username, text: message, time });
+
+    input.value = "";
+  }
+
+  document.getElementById("input").addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      sendMessage();
+    }
+  });
+
+  async function loadMyChats() {
+    try {
+        const res = await fetch(`http://localhost:5000/my_chats/${encodeURIComponent(username)}`);
+        const data = await res.json();
+        if (data.success) {
+        chats = {}; // очистим
+        data.chats.forEach(chat => {
+            chats[chat.room] = chat.messages || [];
+        });
+        updateChatList();
+        }
+    } catch (e) {
+        console.error("Ошибка загрузки чатов:", e);
+    }
+}
+
+function addMessage(author, text, type, time = "") {
+    const box = document.getElementById("chat-box");
+    const msg = document.createElement("div");
+    msg.classList.add("message", (author === username) ? "user" : "bot");
+    const displayName = (author === username) ? "Вы" : author;
+    msg.innerHTML = `<b>${displayName}:</b> ${text} <span class="time">${time}</span>`;
+    box.appendChild(msg);
+    box.scrollTop = box.scrollHeight;
+}
+
+  function getCurrentTime() {
+    const d = new Date();
+    return d.getHours().toString().padStart(2, "0") + ":" + d.getMinutes().toString().padStart(2, "0");
+  }
+</script>
+
+</body>
+</html>
