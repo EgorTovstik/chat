@@ -40,8 +40,10 @@
     <div id="chat-name"></div>
     <div id="chat-box"></div>
     <div id="input-container">
-      <input type="text" id="input" placeholder="Введите сообщение" />
-      <button onclick="sendMessage()">Отправить</button>
+      <form onsubmit="return false;" >
+        <input type="text" id="input" placeholder="Введите сообщение" />
+        <button onclick="sendMessage()">Отправить</button>
+      </form>
     </div>
   </div>
 </div>
@@ -111,6 +113,8 @@
       const data = await res.json();
       if (data.success) {
         username = u;
+        localStorage.setItem("isAuthenticated", "true")
+        localStorage.setItem('username', u);
         initSocket();
         document.getElementById("auth-container").style.display = "none";
         document.getElementById("app").style.display = "flex";
@@ -123,6 +127,17 @@
       msg.textContent = "Ошибка сети";
     }
   }
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    const isAuth = localStorage.getItem('isAuthenticated');
+    if (isAuth === 'true') {
+      username = localStorage.getItem('username');
+      initSocket();
+      document.getElementById("auth-container").style.display = "none";
+      document.getElementById("app").style.display = "flex";
+      loadMyChats();
+    }
+  });
 
   function initSocket() {
     socket = io("http://localhost:5000");
@@ -155,7 +170,7 @@
     socket.emit('create chat', { room: chatName, participants });
 
     selectChat(chatName);
-}
+  }
 
 socket.on('chat created', (data) => {
     if (!chats[data.room]) {
